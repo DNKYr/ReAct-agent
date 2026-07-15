@@ -1,0 +1,46 @@
+[
+  {
+    "id": "list_files",
+    "prompt": "List all files in the data directory",
+    "expect": "words.txt",
+    "max_rounds": 10
+  },
+  {
+    "id": "count_lines",
+    "prompt": "How many non-empty lines are in data/numbers.txt",
+    "expect": "4",
+    "max_rounds": 10
+  },
+  {
+    "id": "read_file",
+    "prompt": "What is the third word in data/words.txt?",
+    "expect": "react",
+    "max_rounds": 10
+  },
+  {
+    "id": "write_file",
+    "prompt": "Create a file data/greeting.txt containing exactly: hello from the agent. Then confirm what you wrote.",
+    "expect": "hello from the agent",
+    "max_rounds": 10,
+    "cleanup": ["data/greeting.txt"]
+  },
+  {
+    "id": "run_python",
+    "prompt": "Run scripts/math_ops.py and report the number it prints.",
+    "expect": "385",
+    "max_rounds": 10
+  },
+  {
+    "id": "find_and_report",
+    "prompt": "Find which file in the data directory contains the word 'hermes' and report its filename.",
+    "expect": "words.txt",
+    "max_rounds": 10
+  },
+  {
+    "id": "multi_step",
+    "prompt": "Read data/numbers.txt, write a Python script scripts/sum_numbers.py that sums those numbers, run it, and report the total.",
+    "expect": "161",
+    "max_rounds": 15,
+    "cleanup": ["scripts/sum_numbers.py"]
+  }
+]

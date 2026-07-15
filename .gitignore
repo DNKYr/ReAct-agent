@@ -2,3 +2,4 @@
 .venv
 .direnv
 __pycache__
+log/

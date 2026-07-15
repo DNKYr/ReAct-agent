@@ -1,10 +1,21 @@
 import json
 
-from functions.get_file_content import get_file_content
-from functions.list_files import list_files
-from functions.run_python_files import run_python
-from functions.write_file import write_file
+from functions.final import schema_final
+from functions.get_file_content import get_file_content, schema_get_file_content
+from functions.list_files import list_files, schema_list_files
+from functions.run_python_files import run_python, schema_run_python
+from functions.thought import schema_thought
+from functions.write_file import schema_write_file, write_file
 from util import set_tool_prompt
+
+tools = [
+    schema_thought,
+    schema_get_file_content,
+    schema_final,
+    schema_list_files,
+    schema_write_file,
+    schema_run_python,
+]
 
 
 def call_function(tool):
