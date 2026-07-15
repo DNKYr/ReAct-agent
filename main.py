@@ -6,6 +6,7 @@ from functions.final import schema_final
 from functions.get_file_content import schema_get_file_content
 from functions.list_files import schema_list_files
 from functions.thought import schema_thought
+from functions.write_file import schema_write_file
 from prompt import system_prompt
 from provider import client
 from util import set_system_prompt, set_user_prompt
@@ -15,6 +16,7 @@ tools = [
     schema_get_file_content,
     schema_final,
     schema_list_files,
+    schema_write_file,
 ]
 
 
@@ -31,14 +33,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     messages = set_system_prompt(system_prompt) + set_user_prompt(args.user_prompt)
-    for _ in range(5):
+    for _ in range(30):
+        print(f"Round {_ + 1}")
         response = send_message(messages)
-        tool = response.tool_calls[0]
-        result = call_function(tool)
         messages.append(response)
-        messages += result
+        for tool in response.tool_calls:
+            messages += call_function(tool)
 
-        if tool.function.name == "final":
+        if response.tool_calls and response.tool_calls[0].function.name == "final":
             for message in messages:
                 print(message)
                 print("\n")

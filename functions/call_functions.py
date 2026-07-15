@@ -2,6 +2,7 @@ import json
 
 from functions.get_file_content import get_file_content
 from functions.list_files import list_files
+from functions.write_file import write_file
 from util import set_tool_prompt
 
 
@@ -20,6 +21,16 @@ def call_function(tool):
     elif function_name == "list_files":
         return set_tool_prompt(
             tool.id, list_files(working_directory, arguments["directory"])
+        )
+    elif function_name == "write_file":
+        return set_tool_prompt(
+            tool.id,
+            write_file(
+                working_directory,
+                arguments["output_path"],
+                arguments["content"],
+                arguments.get("mkdir", False),
+            ),
         )
     else:
         raise ValueError(f"Unknown function: {function_name}")
