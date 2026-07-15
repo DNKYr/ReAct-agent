@@ -1,31 +1,29 @@
 import argparse
 import os
 
-from provider import client
-from prompt import system_prompt
-from util import set_system_prompt, set_user_prompt
-
-
 from functions.call_functions import call_function
-from functions.get_file_content import schema_get_file_content
-from functions.thought import schema_thought
 from functions.final import schema_final
+from functions.get_file_content import schema_get_file_content
+from functions.list_files import schema_list_files
+from functions.thought import schema_thought
+from prompt import system_prompt
+from provider import client
+from util import set_system_prompt, set_user_prompt
 
 tools = [
     schema_thought,
     schema_get_file_content,
     schema_final,
+    schema_list_files,
 ]
 
 
 def send_message(messages):
     response = client.chat.completions.create(
-        model="deepseek-chat",
-        tools=tools,
-        messages=messages,
-        tool_choice="auto"
+        model="deepseek-chat", tools=tools, messages=messages, tool_choice="auto"
     )
     return response.choices[0].message
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Agent")
