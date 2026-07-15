@@ -5,6 +5,7 @@ from functions.call_functions import call_function
 from functions.final import schema_final
 from functions.get_file_content import schema_get_file_content
 from functions.list_files import schema_list_files
+from functions.run_python_files import schema_run_python
 from functions.thought import schema_thought
 from functions.write_file import schema_write_file
 from prompt import system_prompt
@@ -17,6 +18,7 @@ tools = [
     schema_final,
     schema_list_files,
     schema_write_file,
+    schema_run_python,
 ]
 
 
@@ -34,7 +36,7 @@ if __name__ == "__main__":
 
     messages = set_system_prompt(system_prompt) + set_user_prompt(args.user_prompt)
     for _ in range(30):
-        print(f"Round {_ + 1}")
+        print(f"Round {_ + 1}: {messages[-1]}")
         response = send_message(messages)
         messages.append(response)
         for tool in response.tool_calls:

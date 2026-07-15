@@ -2,6 +2,7 @@ import json
 
 from functions.get_file_content import get_file_content
 from functions.list_files import list_files
+from functions.run_python_files import run_python
 from functions.write_file import write_file
 from util import set_tool_prompt
 
@@ -30,6 +31,15 @@ def call_function(tool):
                 arguments["output_path"],
                 arguments["content"],
                 arguments.get("mkdir", False),
+            ),
+        )
+    elif function_name == "run_python":
+        return set_tool_prompt(
+            tool.id,
+            run_python(
+                working_directory,
+                arguments["file_path"],
+                arguments.get("args", None),
             ),
         )
     else:
