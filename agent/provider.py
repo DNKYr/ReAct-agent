@@ -25,3 +25,9 @@ class OpenAICompatibleProvider:
         if not hasattr(self, "_client"):
             self._build_client()
         return self.client
+
+
+def createOpenAICompatibleProvider(
+    api_key: str | None, api_url: str | None, model: str
+):
+    return OpenAICompatibleProvider(api_key=api_key, api_url=api_url, model=model)

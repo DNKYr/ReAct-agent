@@ -3,16 +3,27 @@ revision = 3
 requires-python = ">=3.13"
 
 [[package]]
+name = "agithub"
+version = "2.2.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/08/18/15907c4c213521ef2887335a86b1be326a598f0aa5475858717f2feb52d5/agithub-2.2.2.tar.gz", hash = "sha256:321aa5fc688fde2970562b35c991881b69a13f57372d554a0fab184df85fa8a7", size = 21891, upload-time = "2019-11-12T16:44:12.352Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2e/2a/345fffa0098084ffc54c655b81e896e19adc4e2ff0e16658f7929d8b5272/agithub-2.2.2-py2.py3-none-any.whl", hash = "sha256:5f50071536db0cc9611859e761d7c3dc6f951a8535029bf6af7fb22744b7e118", size = 20838, upload-time = "2019-11-12T16:44:10.235Z" },
+]
+
+[[package]]
 name = "ai-agent"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "agithub" },
     { name = "openai" },
     { name = "python-dotenv" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "agithub", specifier = ">=2.2.2" },
     { name = "openai", specifier = ">=2.44.0" },
     { name = "python-dotenv", specifier = "==1.1.0" },
 ]
