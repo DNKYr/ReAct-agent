@@ -1,20 +1,23 @@
 # Load .env
+import os
+
 import dotenv
 
-github_issue_url = dotenv.dotenv_values()["GITHUB_ISSUE_URL"]
-api_key = dotenv.dotenv_values()["DEEPSEEK_API_KEY"]
-workspace_address = dotenv.dotenv_values()["WORKSPACE"]
+dotenv.load_dotenv()
+
+github_issue_url = os.environ.get("GITHUB_ISSUE_URL")
+api_key = os.environ.get("DEEPSEEK_API_KEY")
+workspace_address = os.environ.get("WORKSPACE")
 # Initialize provider
-from agent.provider import OpenAICompatibleProvider, createOpenAICompatibleProvider
+from agent.provider import createOpenAICompatibleProvider
+from agent.runner import AgentRunner
 
-provider: OpenAICompatibleProvider = createOpenAICompatibleProvider(
-    api_key=api_key, api_url="https://api.deepseek.com", model="Deepseek-chat"
+runner: AgentRunner = AgentRunner(
+    provider=createOpenAICompatibleProvider(
+        api_key=api_key,
+        api_url="https://api.deepseek.com",
+    )
 )
-
-# Initialize Session
-from agent.session import Session
-
-session = Session(provider=provider)
 
 # Load Github issue
 from agithub.GitHub import GitHub
@@ -24,8 +27,7 @@ path = github_issue_url.replace("https://github.com/", "")
 owner, repo, _, issue_num = path.split("/")
 
 status, issue = gh.repos[owner][repo].issues[issue_num].get()
-prompt = f"TITLE: {issue['title']} \n================\nBODY: \n{issue['body']}"
-print(prompt)
+issue_prompt = f"TITLE: {issue['title']} \n================\nBODY: \n{issue['body']}"
 
 # Clone working directory
 import subprocess
@@ -33,3 +35,6 @@ import subprocess
 repo_url = "/".join(["https://github.com", owner, repo])
 subprocess.run(["git", "clone", repo_url, workspace_address])
 subprocess.run(["git", "switch", "-c", f"issue-{issue_num}"])
+
+# load system prompt into client
+from prompt import system_prompt
