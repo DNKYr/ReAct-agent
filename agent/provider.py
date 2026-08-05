@@ -45,19 +45,6 @@ class OpenAICompatibleProvider:
     def _build_client(self):
         self._client = OpenAI(api_key=self.api_key, base_url=self.api_url)
 
-    def _build_system_prompt(self, content: str) -> ChatCompletionSystemMessageParam:
-        return ChatCompletionSystemMessageParam(content=content, role="system")
-
-    def _build_user_prompt(self, content: str) -> ChatCompletionUserMessageParam:
-        return ChatCompletionUserMessageParam(content=content, role="user")
-
-    def _build_tool_output(
-        self, content: str, tool_call_id: str
-    ) -> ChatCompletionToolMessageParam:
-        return ChatCompletionToolMessageParam(
-            content=content, role="tool", tool_call_id=tool_call_id
-        )
-
     def get_client(self):
         if not hasattr(self, "_client"):
             self._build_client()
