@@ -27,6 +27,7 @@ class AgentResult:
     tool_calling_name: list[str]
     tool_calling_argument: list[str]
     tool_result: list[str]
+    finish_reason: str | None = None
     message_content: str | None = None
     reasoning_content: str | None = None
 
@@ -137,6 +138,7 @@ class AgentRunner:
                 result.tool_calling_name.append(tool_call.function.name)
                 result.tool_calling_argument.append(tool_call.function.arguments)
                 self._load_tool_prompt(tool_call.id, tool_response)
+        result.finish_reason = finish_reason
         result.message_content = message_content
         result.reasoning_content = reasoning_content
         self.result.append(result)
