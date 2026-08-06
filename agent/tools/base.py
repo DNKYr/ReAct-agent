@@ -1,4 +1,3 @@
-import json
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Self
 
@@ -44,9 +43,16 @@ class Tool(ABC):
         """Run Tools: Return string or else"""
         ...
 
-    @abstractmethod
     def parse_argument(self, argument: str) -> dict[str, Any]:
-        pass
+        import json
+
+        stripped = argument.strip()
+
+        if not stripped:
+            return {}
+
+        parsed = json.loads(stripped)
+        return {} if parsed is None else parsed
 
     def to_schema(self) -> Dict[str, Any]:
         """To OpenAI Schema"""

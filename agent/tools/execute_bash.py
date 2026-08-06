@@ -13,7 +13,11 @@ class Execute_Bash(Tool):
 
     @property
     def description(self) -> str:
-        return "Execute Bash command, return stdout + stderr"
+        return """
+        Execute Bash Command
+        Do not use this tool for reading, writing, searching, or any other File System related action.
+        Use read_file, write_file, search_file tools instead
+        """
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -25,10 +29,6 @@ class Execute_Bash(Tool):
                         "type": "string",
                         "description": "The bash command to execute",
                     },
-                    "arguments": {
-                        "type": "string",
-                        "description": "The arguments for the bash command",
-                    },
                 },
                 "required": ["command"],
             }
@@ -37,17 +37,6 @@ class Execute_Bash(Tool):
     @classmethod
     def create(cls) -> Self:
         return cls()
-
-    def parse_argument(self, argument: str) -> dict[str, Any]:
-        import json
-
-        stripped = argument.strip()
-
-        if not stripped:
-            return {}
-
-        parsed = json.loads(stripped)
-        return {} if parsed is None else parsed
 
     async def execute(self, command: str | None = None, **kwargs: Any) -> str:
         if not command:
