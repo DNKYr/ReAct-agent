@@ -152,7 +152,7 @@ class AgentRunner:
         model: str,
         prompt: str,
         reasoning_effort: str,
-        max_iteration=10,
+        max_iteration=50,
     ):
         """Main agent loop"""
         self._initialize_agent_spec(model, prompt, reasoning_effort)
