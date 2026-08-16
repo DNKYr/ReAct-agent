@@ -45,17 +45,24 @@ class Execute_Bash(Tool):
         if self._is_dangerous(command):
             return "Error: Dangerous command detected. Do not have access to run dangerous command. Stop and report to the user"
 
+        process = await asyncio.create_subprocess_shell(
+            command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+
         try:
-            process = await asyncio.create_subprocess_shell(
-                command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-            )
-            stdout, stderr = await process.communicate()
-            result = stdout.decode()
-            if stderr:
-                result += stderr.decode()
-            return result
-        except Exception as e:
-            return f"Error: while executing {command}, has {e}"
+            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=10)
+        except asyncio.TimeoutError:
+            process.kill()
+            await process.wait()
+            return f"Error: Command {command} timed out"
+        stdout_text = stdout.decode("utf-8", errors="ignore")
+        stderr_text = stderr.decode("utf-8", errors="ignore")
+        return_code = process.returncode
+
+        result = (
+            f"stdout: {stdout_text}\nstderr: {stderr_text}\nreturn code: {return_code}"
+        )
+        return result
 
     def _is_dangerous(self, command: str) -> bool:
         dangerous_commands = [
