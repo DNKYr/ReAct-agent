@@ -1,12 +1,7 @@
 from typing import Any
 
 from openai import OpenAI
-from openai.types.chat import (
-    ChatCompletion,
-    ChatCompletionSystemMessageParam,
-    ChatCompletionToolMessageParam,
-    ChatCompletionUserMessageParam,
-)
+from openai.types.chat import ChatCompletion
 
 from agent.tools.base import ToolRegistry
 
