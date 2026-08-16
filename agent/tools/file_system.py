@@ -192,88 +192,9 @@ class List_Files(FS_Tool):
             return "Error: path is not a directory"
 
         if recursive:
-            return str(list(fp.rglob("*")))
+            return str(list(fp.glob("**/*")))
 
         return str(list(fp.iterdir()))
-
-
-class Edit_File(FS_Tool):
-    """Tool for Edit File"""
-
-    @property
-    def name(self) -> str:
-        return "edit_file"
-
-    @property
-    def description(self) -> str:
-        return """
-        This tool is used to edit a file.
-        Prerequisite: You have to first run read_file then start your edit.
-        Replaces lines start_line through end_line (inclusive) with content.
-        Only include the replacement text in content. Lines outside the range are preserved as-is,
-        so if content covers logic that also exists outside the range, duplication will occur.
-        """
-
-    @property
-    def parameters(self) -> Dict[str, Any]:
-        return {
-            "type": "object",
-            "properties": {
-                "path": {
-                    "type": "string",
-                    "description": "Path to the file to edit",
-                },
-                "content": {
-                    "type": "string",
-                    "description": "Content to write to the file",
-                },
-                "start_line": {
-                    "type": "integer",
-                    "description": "Line number to start editing from",
-                },
-                "end_line": {
-                    "type": "integer",
-                    "description": "Line number to end editing at",
-                },
-            },
-            "required": ["path", "content", "start_line", "end_line"],
-        }
-
-    async def execute(
-        self,
-        path: str | None = None,
-        content: str | None = None,
-        start_line: int | None = None,
-        end_line: int | None = None,
-        **kwargs: Any,
-    ) -> str:
-        if not path:
-            return "Error: path is required"
-        if start_line is None or end_line is None:
-            return "Error: start_line and end_line are required"
-        if start_line > end_line:
-            return "Error: start_line must be less than or equal to end_line"
-        if content is None:
-            content = ""
-        try:
-            # Read the file
-            with open(path, "r") as f:
-                lines = f.readlines()
-            if start_line < 1 or end_line > len(lines):
-                return "Error: start_line or end_line out of range"
-            start0 = start_line - 1
-            lines = lines[:start0] + content.splitlines(True) + lines[end_line:]
-            return self._write_to_file(path, lines)
-        except Exception as e:
-            return f"Error: {str(e)}"
-
-    def _write_to_file(self, path: str, content) -> str:
-        try:
-            with open(path, "w") as f:
-                f.writelines(content)
-            return "Success"
-        except Exception as e:
-            return f"Error: {str(e)}"
 
 
 class Find_File(FS_Tool):
