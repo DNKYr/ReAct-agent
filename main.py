@@ -35,7 +35,7 @@ tools.add_tools(List_Files())
 tools.add_tools(Read_File())
 tools.add_tools(Write_File())
 
-runner = AgentRunner(tools, provider)
+runner = AgentRunner(tools, provider, "deepseek-v4-flash", "high")
 
 # Load Github issue
 from agithub.GitHub import GitHub
@@ -58,8 +58,5 @@ print(issue_prompt)
 # subprocess.run(["git", "clone", repo_url, workspace_address])
 
 # start the agent Runner
-runner.loop(
-    model="deepseek-v4-flash",
-    prompt=issue_prompt,
-    reasoning_effort="high",
-)
+runner.initialize_runner(issue_prompt, system_prompt)
+runner.run()

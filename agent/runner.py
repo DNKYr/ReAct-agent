@@ -34,27 +34,37 @@ class AgentResult:
 
 class AgentRunner:
     """
-    Send request to provider, handling tool calls and tool respoonses
+    Send request to provider, handling tool calls and tool responses
+    Handles one single run: user input -> model response -> tool calls -> tool results -> model response ->... -> final
     """
 
     def __init__(
         self,
         tools: ToolRegistry,
         provider: OpenAICompatibleProvider,
+        model: str | None = None,
+        reasoning_effort: str | None = None,
     ):
         self.tools = tools
         self.provider = provider
+        self.model = model
+        self.reasoning_effort = reasoning_effort
         self.result = []
 
     def _load_user_prompt(self, user: str) -> None:
         """load user prompt and put it in message"""
         self.spec.messages.append({"role": "user", "content": user})
 
-    def _load_system_prompt(self) -> None:
+    def _load_system_prompt(self, system_prompt: str | None = None) -> None:
         """return system_prompt in dir"""
-        from prompt import system_prompt
+        from prompt import system_prompt as default_system_prompt
 
-        self.spec.messages.append({"role": "system", "content": system_prompt})
+        self.spec.messages.append(
+            {
+                "role": "system",
+                "content": system_prompt if system_prompt else default_system_prompt,
+            }
+        )
 
     def _load_tool_prompt(self, id: str, tool: str) -> None:
         self.spec.messages.append({"role": "tool", "tool_call_id": id, "content": tool})
@@ -72,18 +82,14 @@ class AgentRunner:
 
         return asyncio.run(tool.execute(**tool.parse_argument(tool_args)))
 
-    def _initialize_agent_spec(
-        self, model: str, prompt: str, reasoning_effort: str
-    ) -> None:
-        """Build AgentSpec from tool call result, system_prompt, and user_prompt"""
+    def _initialize_agent_spec(self) -> None:
+        """Build a fresh AgentSpec for a new run"""
         self.spec = AgentSpec(
             tools=self.tools,
-            model=model,
+            model=self.model,
             messages=[],
-            reasoning_effort=reasoning_effort,
+            reasoning_effort=self.reasoning_effort,
         )
-        self._load_system_prompt()
-        self._load_user_prompt(prompt)
 
     def _display_response(self, response: ChatCompletion) -> None:
         """Display all attributes of a ChatCompletion response"""
@@ -147,15 +153,12 @@ class AgentRunner:
     # ----------------------------------------------
     # Public API
     # ----------------------------------------------
-    def loop(
+    def run(
         self,
-        model: str,
-        prompt: str,
-        reasoning_effort: str,
         max_iteration=50,
     ):
         """Main agent loop"""
-        self._initialize_agent_spec(model, prompt, reasoning_effort)
+        self.result = []
 
         for id in range(max_iteration):
             response = self._send_message()
@@ -164,3 +167,15 @@ class AgentRunner:
             if not cont:
                 break
         self._display_results()
+
+    def initialize_runner(
+        self, first_prompt: str, system_prompt: str | None = None
+    ) -> None:
+        """Initialize runner with first prompt and agent spec"""
+        self._initialize_agent_spec()
+        self._load_system_prompt(system_prompt)
+        self._load_user_prompt(first_prompt)
+
+    def update_runner(self, prompt: str) -> None:
+        """Append a follow-up user prompt to the existing conversation"""
+        self._load_user_prompt(prompt)
