@@ -2,6 +2,7 @@
 
 import uuid
 
+from agent.log import SessionLogger
 from agent.provider import OpenAICompatibleProvider
 from agent.runner import AgentRunner
 from agent.tools.base import ToolRegistry
@@ -35,6 +36,8 @@ class AgentSession:
             reasoning_effort=reasoning_effort,
             tools=tools,
         )
+        logger = SessionLogger(self.session_id)
+
         while True:
             prompt = input("")
             if not prompt or prompt == "/quit":
@@ -45,3 +48,6 @@ class AgentSession:
             else:
                 runner.update_runner(self.user_prompt[-1])
             runner.run()
+            logger.log("user", prompt)
+            logger.log("agent", runner.result[-1].message_content)
+        logger.write_logs()
