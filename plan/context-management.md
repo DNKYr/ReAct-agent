@@ -102,8 +102,8 @@ Initial multi-round interactions will be handled by the AgentRunner. That is ins
 
 ---
 ## Build Order
-1. Multi-round interactions
-2. Message Log: message.log single file
-3. Core Memory System
-4. Context Manager
-5. Message Log refactor to SQLite-based archival storage system
+1. [x] Multi-round interactions
+2. [ ] Message Log: message.log single file
+3. [ ] Core Memory System
+4. [ ] Context Manager
+5. [ ] Message Log refactor to SQLite-based archival storage system
