@@ -35,6 +35,7 @@ class AgentSession:
             model=model,
             reasoning_effort=reasoning_effort,
             tools=tools,
+            session_id=self.session_id,
         )
         logger = SessionLogger(self.session_id)
 
@@ -47,7 +48,8 @@ class AgentSession:
                 runner.initialize_runner(self.user_prompt[0], system_prompt)
             else:
                 runner.update_runner(self.user_prompt[-1])
-            runner.run()
             logger.log("user", prompt)
+            logger.write_latest_log()
+            runner.run()
             logger.log("agent", runner.result[-1].message_content)
-        logger.write_logs()
+            logger.write_latest_log()

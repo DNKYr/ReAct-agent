@@ -1,10 +1,12 @@
 import asyncio
-from dataclasses import asdict, dataclass
-from pprint import pformat
-from typing import Any
+import uuid
+from dataclasses import dataclass
+from typing import Any, Literal
 
 from openai.types.chat import ChatCompletion
+from pydantic import UUID4
 
+from agent.log import RunLogger
 from agent.provider import OpenAICompatibleProvider
 from agent.tools.base import ToolRegistry
 
@@ -42,11 +44,15 @@ class AgentRunner:
         self,
         tools: ToolRegistry,
         provider: OpenAICompatibleProvider,
+        session_id: UUID4 | None = None,
+        run_id: UUID4 | None = None,
         model: str | None = None,
         reasoning_effort: str | None = None,
     ):
         self.tools = tools
         self.provider = provider
+        self.session_id = session_id if session_id else uuid.uuid4()
+        self.run_id = run_id if run_id else uuid.uuid4()
         self.model = model
         self.reasoning_effort = reasoning_effort
         self.result = []
@@ -68,6 +74,22 @@ class AgentRunner:
 
     def _load_tool_prompt(self, id: str, tool: str) -> None:
         self.spec.messages.append({"role": "tool", "tool_call_id": id, "content": tool})
+
+    def _log_run(
+        self,
+        message_type: Literal["tool", "agent"],
+        message: str,
+        logger: RunLogger,
+        tool_call: str = "",
+        tool_args: dict | None = None,
+    ) -> None:
+        logger.log(
+            message_type=message_type,
+            message=message,
+            tool_call=tool_call,
+            tool_args=tool_args,
+        )
+        logger.write_latest_log()
 
     def _call_tool(self, tool_call: Any) -> str:
         """Handling tool calls and return ToolSuccess or ToolFailure"""
@@ -91,30 +113,6 @@ class AgentRunner:
             reasoning_effort=self.reasoning_effort,
         )
 
-    def _display_response(self, response: ChatCompletion) -> None:
-        """Display all attributes of a ChatCompletion response"""
-        dump = response.model_dump()
-        for key, value in dump.items():
-            print(f"[{key}]: {pformat(value, indent=2, width=120)}")
-
-    def _display_results(self) -> None:
-        """Display all AgentResult objects stored in self.result"""
-        for result in self.result:
-            dump = asdict(result)
-            for key, value in dump.items():
-                print(f"[{key}]: {pformat(value, indent=2, width=120)}")
-            print("-" * 60)
-
-    def _log_results(self) -> None:
-        """Log all AgentResult objects stored in self.result"""
-        result = self.result[-1]
-        dump = asdict(result)
-        with open("running.log", "a") as f:
-            for key, value in dump.items():
-                f.write(f"[{key}]: {pformat(value, indent=2, width=120)}\n")
-            f.write("-" * 60)
-            f.write("\n")
-
     def _send_message(self) -> ChatCompletion:
         """Send context to provider"""
         return self.provider.chat(
@@ -124,19 +122,28 @@ class AgentRunner:
             reasoning_effort=self.spec.reasoning_effort,
         )
 
-    def _process_llm_response(self, run_id: int, llm_response: ChatCompletion) -> bool:
+    def _process_llm_response(
+        self, run_id: int, llm_response: ChatCompletion, logger: RunLogger
+    ) -> bool:
         result = AgentResult(run_id, list(), list(), list())
         finish_reason = llm_response.choices[0].finish_reason
         reasoning_content: str | None = llm_response.choices[
             0
         ].message.reasoning_content
-        message_content = llm_response.choices[0].message.content
+        message_content: str = (
+            llm_response.choices[0].message.content
+            if llm_response.choices[0].message.content
+            else ""
+        )
         tool_calls = llm_response.choices[0].message.tool_calls
 
         # Append assistant message to conversation history
         self.spec.messages.append(llm_response.choices[0].message.model_dump())
 
-        # WARNING: this is wrong when there is multiple tool calls per turn
+        # Skip logging for empty llm_response
+        if message_content:
+            self._log_run("agent", message_content, logger)
+
         if tool_calls:
             for tool_call in tool_calls:
                 tool_response = self._call_tool(tool_call)
@@ -144,6 +151,13 @@ class AgentRunner:
                 result.tool_calling_name.append(tool_call.function.name)
                 result.tool_calling_argument.append(tool_call.function.arguments)
                 self._load_tool_prompt(tool_call.id, tool_response)
+                self._log_run(
+                    "tool",
+                    tool_response,
+                    logger,
+                    tool_call.function.name,
+                    tool_call.function.arguments,
+                )
         result.finish_reason = finish_reason
         result.message_content = message_content
         result.reasoning_content = reasoning_content
@@ -160,13 +174,13 @@ class AgentRunner:
         """Main agent loop"""
         self.result = []
 
+        logger = RunLogger(self.run_id, self.session_id)
+
         for id in range(max_iteration):
             response = self._send_message()
-            cont = self._process_llm_response(id, response)
-            self._log_results()
+            cont = self._process_llm_response(id, response, logger)
             if not cont:
                 break
-        self._display_results()
 
     def initialize_runner(
         self, first_prompt: str, system_prompt: str | None = None
@@ -179,3 +193,4 @@ class AgentRunner:
     def update_runner(self, prompt: str) -> None:
         """Append a follow-up user prompt to the existing conversation"""
         self._load_user_prompt(prompt)
+        self.run_id = uuid.uuid4()

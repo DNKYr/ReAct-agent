@@ -35,7 +35,9 @@ tools.add_tools(List_Files())
 tools.add_tools(Read_File())
 tools.add_tools(Write_File())
 
-runner = AgentRunner(tools, provider, "deepseek-v4-flash", "high")
+runner = AgentRunner(
+    tools, provider, model="deepseek-v4-flash", reasoning_effort="high"
+)
 
 # Load Github issue
 from agithub.GitHub import GitHub

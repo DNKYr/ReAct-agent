@@ -22,6 +22,16 @@ class SessionLog:
     message: str
 
 
+@dataclass
+class RunLog:
+    run_id: UUID4
+    timestamp: str
+    message_type: Literal["agent", "tool"]
+    message: str
+    tool_call: str
+    tool_args: dict | None
+
+
 class SessionLogger:
     """Logger for session log"""
 
@@ -44,11 +54,54 @@ class SessionLogger:
             )
         )
 
-    def write_logs(self, file_path: str = "session.log") -> None:
-        """Log all SessionLog objects stored in self.logs"""
+    def write_latest_log(self, file_path: str = "session.log") -> None:
+        """Write the latest log entry to the log file"""
         with open(file_path, "a") as f:
+            log = self.logs[-1]
+            f.write(f"[{log.timestamp}] [{log.message_type}] : {log.message}\n")
+            f.write("-" * 60)
+            f.write("\n")
+
+
+class RunLogger:
+    """Logger for run log"""
+
+    def __init__(self, run_id: UUID4, session_id: UUID4):
+        self.logs = []
+        self.run_id = run_id
+        self.session_id = session_id
+
+    def log(
+        self,
+        message_type: Literal["agent", "tool"],
+        message: str,
+        tool_call: str = "",
+        tool_args: dict | None = None,
+    ):
+        timestamp = datetime.now(timezone.utc).isoformat()
+        self.logs.append(
+            RunLog(
+                run_id=self.run_id,
+                timestamp=timestamp,
+                message_type=message_type,
+                message=message,
+                tool_call=tool_call,
+                tool_args=tool_args,
+            )
+        )
+
+    def write_latest_log(self, file_path: str = "run.log") -> None:
+        """Write the latest log entry to the log file"""
+        with open(file_path, "a") as f:
+            log = self.logs[-1]
             f.write(f"Session ID: {self.session_id}\n")
-            for log in self.logs:
-                f.write(f"[{log.timestamp}] [{log.message_type}] : {log.message}\n")
+            f.write(f"Run ID: {self.run_id}\n")
+            f.write(f"Timestamp: {log.timestamp}\n")
+            f.write(f"Message Type: {log.message_type}\n")
+            if log.tool_call:
+                f.write(f"Tool Call: {log.tool_call}\n")
+            if log.tool_args:
+                f.write(f"Tool Args: {log.tool_args}\n")
+            f.write(f"Message: {log.message}\n")
             f.write("-" * 60)
             f.write("\n")

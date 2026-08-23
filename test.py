@@ -29,7 +29,9 @@ provider = OpenAICompatibleProvider(
 tools = ToolRegistry()
 tools.add_tools(Execute_Bash())
 
-runner = AgentRunner(tools, provider, "deepseek-v4-flash", "high")
+runner = AgentRunner(
+    tools, provider, model="deepseek-v4-flash", reasoning_effort="high"
+)
 
 runner.initialize_runner(message, system_prompt)
 runner.run()

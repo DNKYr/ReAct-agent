@@ -42,9 +42,15 @@ tools.add_tools(List_Files())
 tools.add_tools(Edit_File())
 tools.add_tools(Find_File())
 
-runner1 = AgentRunner(tools, provider, "deepseek-v4-flash", "high")
-runner2 = AgentRunner(tools, provider, "deepseek-v4-flash", "high")
-runner3 = AgentRunner(tools, provider, "deepseek-v4-flash", "high")
+runner1 = AgentRunner(
+    tools, provider, model="deepseek-v4-flash", reasoning_effort="high"
+)
+runner2 = AgentRunner(
+    tools, provider, model="deepseek-v4-flash", reasoning_effort="high"
+)
+runner3 = AgentRunner(
+    tools, provider, model="deepseek-v4-flash", reasoning_effort="high"
+)
 
 runner1.initialize_runner(message, system_prompt)
 runner1.run()
