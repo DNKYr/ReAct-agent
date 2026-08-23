@@ -41,8 +41,10 @@ class Edit_file:
 
 Plan to refactor all the out-of-class util function to edit-util.py, so they can be reused in memory-related CRUD operations.
 
-### Message Log
-The message log stores all input user messages, agent responses, and tool calls. This is essentially the archival storage in MemGPT. In the beginning, this will be a simple append-only message.log file. Then we will migrate to SQLite-based archival storage system. 
+### Session.log + Run.log
+Session.log: Stores session-level metadata such as the start time, end time, and session ID. It also stores user's prompt and agent's final responses
+Run.log: Stores run-level metadata such as the start time, end time, run ID, and session ID. It mainly consists of tool calls, their inputs, and outputs. 
+
 Database: SQLite. Serverless single file database. The simplest to use and deploy for a learning project. Refactor to PostgreSQL when creating multi-agent system.
 Database Table for logging
   - Archival Storage:
@@ -103,7 +105,7 @@ Initial multi-round interactions will be handled by the AgentRunner. That is ins
 ---
 ## Build Order
 1. [x] Multi-round interactions
-2. [ ] Message Log: message.log single file
+2. [x] Run Log + Session Log: separate log files for runs and sessions
 3. [ ] Core Memory System
 4. [ ] Context Manager
 5. [ ] Message Log refactor to SQLite-based archival storage system
