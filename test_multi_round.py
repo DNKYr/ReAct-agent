@@ -5,16 +5,20 @@ import dotenv
 from agent.provider import OpenAICompatibleProvider
 from agent.session import AgentSession
 from agent.tools.base import ToolRegistry
+from agent.tools.file_system import Read_File
 
 dotenv.load_dotenv()
 provider = OpenAICompatibleProvider(
     api_key=os.environ.get("DEEPSEEK_API_KEY"), api_url="https://api.deepseek.com"
 )
 
+tools = ToolRegistry()
+tools.add_tools(Read_File())
+
 session = AgentSession()
 session.loop(
     provider=provider,
-    tools=ToolRegistry(),
+    tools=tools,
     model="deepseek-v4-flash",
     reasoning_effort="high",
 )
