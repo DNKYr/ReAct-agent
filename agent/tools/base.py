@@ -75,6 +75,11 @@ class ToolRegistry:
     def add_tools(self, tool: Tool):
         self.tools.append(tool)
 
+    def add_tools_by_name(self, *names: str):
+        from agent.tools import resolve_tool
+        for name in names:
+            self.tools.append(resolve_tool(name).create())
+
     def search_tools(self, name: str) -> Tool | None:
         for tool in self.tools:
             if name == tool.name:
