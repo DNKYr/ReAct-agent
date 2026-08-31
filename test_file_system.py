@@ -5,18 +5,9 @@ import dotenv
 from agent.provider import OpenAICompatibleProvider
 from agent.runner import AgentRunner
 from agent.tools.base import ToolRegistry
-from agent.tools.edit import Edit_File
-from agent.tools.execute_bash import Execute_Bash
-from agent.tools.file_system import (
-    Find_File,
-    List_Files,
-    Read_File,
-    Write_File,
-)
 
 dotenv.load_dotenv()
 
-system_prompt = "You are a helpful assistant. You can use the following tools: execute_bash, read_file, list_files"
 message = """
 Hi Deepseek! This is a test for my tool.
 Can you read agent/runner.py and show me its content?
@@ -35,12 +26,7 @@ provider = OpenAICompatibleProvider(
     api_key=os.environ.get("DEEPSEEK_API_KEY"), api_url="https://api.deepseek.com"
 )
 tools = ToolRegistry()
-tools.add_tools(Execute_Bash())
-tools.add_tools(Read_File())
-tools.add_tools(Write_File())
-tools.add_tools(List_Files())
-tools.add_tools(Edit_File())
-tools.add_tools(Find_File())
+tools.add_tools_by_name("execute_bash", "read_file", "write_file", "list_files", "edit_file", "find_file")
 
 runner1 = AgentRunner(
     tools, provider, model="deepseek-v4-flash", reasoning_effort="high"
@@ -52,7 +38,7 @@ runner3 = AgentRunner(
     tools, provider, model="deepseek-v4-flash", reasoning_effort="high"
 )
 
-runner1.initialize_runner(message, system_prompt)
+runner1.initialize_runner(message)
 runner1.run()
 
 runner2.initialize_runner(message2)

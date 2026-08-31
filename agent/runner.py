@@ -1,3 +1,4 @@
+"""Core Runner Modules"""
 import asyncio
 import uuid
 from dataclasses import dataclass
@@ -9,6 +10,7 @@ from pydantic import UUID4
 from agent.log import RunLogger
 from agent.provider import OpenAICompatibleProvider
 from agent.tools.base import ToolRegistry
+from agent.context import ContextBuilder, create_context_builder
 
 
 @dataclass
@@ -48,6 +50,7 @@ class AgentRunner:
         run_id: UUID4 | None = None,
         model: str | None = None,
         reasoning_effort: str | None = None,
+        context_builder: ContextBuilder | None = None,
     ):
         self.tools = tools
         self.provider = provider
@@ -55,25 +58,8 @@ class AgentRunner:
         self.run_id = run_id if run_id else uuid.uuid4()
         self.model = model
         self.reasoning_effort = reasoning_effort
-        self.result = []
+        self.context_builder = context_builder or create_context_builder()
 
-    def _load_user_prompt(self, user: str) -> None:
-        """load user prompt and put it in message"""
-        self.spec.messages.append({"role": "user", "content": user})
-
-    def _load_system_prompt(self, system_prompt: str | None = None) -> None:
-        """return system_prompt in dir"""
-        from prompt import system_prompt as default_system_prompt
-
-        self.spec.messages.append(
-            {
-                "role": "system",
-                "content": system_prompt if system_prompt else default_system_prompt,
-            }
-        )
-
-    def _load_tool_prompt(self, id: str, tool: str) -> None:
-        self.spec.messages.append({"role": "tool", "tool_call_id": id, "content": tool})
 
     def _log_run(
         self,
@@ -125,11 +111,7 @@ class AgentRunner:
     def _process_llm_response(
         self, run_id: int, llm_response: ChatCompletion, logger: RunLogger
     ) -> bool:
-        result = AgentResult(run_id, list(), list(), list())
         finish_reason = llm_response.choices[0].finish_reason
-        reasoning_content: str | None = llm_response.choices[
-            0
-        ].message.reasoning_content
         message_content: str = (
             llm_response.choices[0].message.content
             if llm_response.choices[0].message.content
@@ -147,10 +129,7 @@ class AgentRunner:
         if tool_calls:
             for tool_call in tool_calls:
                 tool_response = self._call_tool(tool_call)
-                result.tool_result.append(tool_response)
-                result.tool_calling_name.append(tool_call.function.name)
-                result.tool_calling_argument.append(tool_call.function.arguments)
-                self._load_tool_prompt(tool_call.id, tool_response)
+                self.spec.messages.append({"role": "tool", "tool_call_id": tool_call.id, "content": tool_response,})
                 self._log_run(
                     "tool",
                     tool_response,
@@ -158,11 +137,7 @@ class AgentRunner:
                     tool_call.function.name,
                     tool_call.function.arguments,
                 )
-        result.finish_reason = finish_reason
-        result.message_content = message_content
-        result.reasoning_content = reasoning_content
-        self.result.append(result)
-        return finish_reason == "tool_calls" or finish_reason == "function_call"
+        return finish_reason in ("tool_calls", "function_call")
 
     # ----------------------------------------------
     # Public API
@@ -170,9 +145,8 @@ class AgentRunner:
     def run(
         self,
         max_iteration=50,
-    ):
+    ) -> str:
         """Main agent loop"""
-        self.result = []
 
         logger = RunLogger(self.run_id, self.session_id)
 
@@ -181,16 +155,16 @@ class AgentRunner:
             cont = self._process_llm_response(id, response, logger)
             if not cont:
                 break
+        return self.spec.messages[-1]["content"]
 
     def initialize_runner(
-        self, first_prompt: str, system_prompt: str | None = None
+        self, first_prompt: str
     ) -> None:
         """Initialize runner with first prompt and agent spec"""
         self._initialize_agent_spec()
-        self._load_system_prompt(system_prompt)
-        self._load_user_prompt(first_prompt)
+        self.spec.messages = self.context_builder.build_message(self.spec.messages, first_prompt)
 
     def update_runner(self, prompt: str) -> None:
         """Append a follow-up user prompt to the existing conversation"""
-        self._load_user_prompt(prompt)
+        self.spec.messages = self.context_builder.build_message(self.spec.messages, prompt)
         self.run_id = uuid.uuid4()

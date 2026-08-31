@@ -2,6 +2,7 @@
 
 import uuid
 
+from agent.context import ContextBuilder, create_context_builder
 from agent.log import SessionLogger
 from agent.provider import OpenAICompatibleProvider
 from agent.runner import AgentRunner
@@ -27,7 +28,6 @@ class AgentSession:
         tools: ToolRegistry,
         model: str | None,
         reasoning_effort: str | None,
-        system_prompt: str | None = None,
     ) -> None:
         """Loop to handle user prompts"""
         runner = AgentRunner(
@@ -45,11 +45,11 @@ class AgentSession:
                 break
             self.user_prompt.append(prompt)
             if len(self.user_prompt) == 1:
-                runner.initialize_runner(self.user_prompt[0], system_prompt)
+                runner.initialize_runner(self.user_prompt[0])
             else:
                 runner.update_runner(self.user_prompt[-1])
             logger.log("user", prompt)
             logger.write_latest_log()
-            runner.run()
-            logger.log("agent", runner.result[-1].message_content)
+            agent_message = runner.run()
+            logger.log("agent", agent_message)
             logger.write_latest_log()
