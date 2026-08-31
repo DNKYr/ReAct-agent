@@ -13,6 +13,8 @@ from typing import Literal
 
 from pydantic import UUID4
 
+from agent.path_util import get_logs_dir
+
 
 @dataclass
 class SessionLog:
@@ -54,8 +56,9 @@ class SessionLogger:
             )
         )
 
-    def write_latest_log(self, file_path: str = "session.log") -> None:
+    def write_latest_log(self) -> None:
         """Write the latest log entry to the log file"""
+        file_path = get_logs_dir(str(self.session_id)) / "session.log"
         with open(file_path, "a") as f:
             log = self.logs[-1]
             f.write(f"[{log.timestamp}] [{log.message_type}] : {log.message}\n")
@@ -90,8 +93,9 @@ class RunLogger:
             )
         )
 
-    def write_latest_log(self, file_path: str = "run.log") -> None:
+    def write_latest_log(self) -> None:
         """Write the latest log entry to the log file"""
+        file_path = get_logs_dir(str(self.session_id)) / "run.log"
         with open(file_path, "a") as f:
             log = self.logs[-1]
             f.write(f"Session ID: {self.session_id}\n")
