@@ -28,7 +28,7 @@ class Read_Memory(Memory_Tool):
     @property
     def description(self) -> str:
         return """
-        Read the desired memory content from memory file
+        Read the desired memory content from memory related file
         """
 
     @property
@@ -36,15 +36,23 @@ class Read_Memory(Memory_Tool):
         return dict(
             type="object",
             properties={
+                "file_name": {
+                    "type": "string",
+                    "description": "The name of the memory file to read from: LITERAL[memory|user]",
+                    "enum": ["memory", "user"],
+                },
             },
-            required=[],
+            required=["file_name"],
         )
 
-    async def execute(self, **kwargs: Any) -> str:
+    async def execute(self, file_name: str | None = None, **kwargs: Any) -> str:
         if not self.memory_store:
             return "Error: Internal Error, MemoryStore not provided"
 
-        return self.memory_store.read_memory()
+        if not file_name:
+            return "Error: file_name is required"
+
+        return self.memory_store.read_memory(file_name)
 
 
 
@@ -59,10 +67,9 @@ class Write_Memory(Memory_Tool):
     @property
     def description(self) -> str:
         return """
-        Write to the MEMORY.md in the ~/.dclaw directory
-        Store the fact about the user
-        Only to use this tool when the MEMORY.md does not already exist.
-        If the MEMORY.md already exists, use the edit_memory tool instead.
+        Write content to a core memory file:
+        - "memory": MEMORY.md in ~/.dclaw, dynamic notes the agent keeps across sessions. Only use when MEMORY.md does not exist yet; otherwise use the edit_memory tool.
+        - "user": USER.md in ~/.dclaw, stable facts about the user. Changes require explicit user confirmation.
         If the length of the content exceeds 10,000 characters, the tool will return an error.
         """
 
@@ -72,26 +79,33 @@ class Write_Memory(Memory_Tool):
             {
                 "type": "object",
                 "properties": {
+                    "file_name": {
+                        "type": "string",
+                        "description": "The name of the file to write to",
+                        "enum": ["memory", "user"]
+                    },
                     "content": {
                         "type": "string",
                         "description": "The content to write to the memory",
                     },
                 },
-                "required": ["content"],
+                "required": ["file_name", "content"],
             }
         )
 
-    async def execute(self, content: str | None = None, **kwargs: Any) -> str:
+    async def execute(self, file_name: str | None = None, content: str | None = None, **kwargs: Any) -> str:
         if not self.memory_store:
             return "Error: Existing memory store is None"
+        if not file_name:
+            return "Error: file_name is required"
         if not content:
             content = ""
-        print(f"Memory WRITE:\n{generate_diff_string(self.memory_store.read_memory(), content)}")
-        consent = input("Do you want to save these changes? (y/N): ")
-        if consent.lower() != "y":
-            return "Edit cancelled by User"
-        result = self.memory_store.write_memory(content)
-        return result
+        if file_name == "user":
+            print(f"{file_name.upper()} WRITE:\n{generate_diff_string(self.memory_store.read_memory(file_name), content)}")
+            consent = input("Do you want to save these changes? (y/N): ")
+            if consent.lower() != "y":
+                return "Edit cancelled by User"
+        return self.memory_store.write_memory(file_name, content)
 
 
 class Edit_Memory(Memory_Tool):
@@ -104,7 +118,8 @@ class Edit_Memory(Memory_Tool):
     @property
     def description(self) -> str:
         return """
-        Edit the core memory to stored fact about user across sections
+        Edit the core memory to store facts about the user across sections.
+        Editing "user" (USER.md) requires explicit user confirmation.
         Every old_text must match unique, non-overlapping region of the original file.
         Do not include large unchanged regions just to connect distant changes
         If the length of the edited content exceeds 10,000 characters, the tool will return an error.
@@ -116,6 +131,11 @@ class Edit_Memory(Memory_Tool):
             {
                 "type": "object",
                 "properties": {
+                    "file_name": {
+                        "type": "string",
+                        "description": "The name of the file to edit",
+                        "enum": ["memory", "user"],
+                    },
                     "old_text": {
                         "type": "string",
                         "description": "The old text to be replaced",
@@ -125,30 +145,32 @@ class Edit_Memory(Memory_Tool):
                         "description": "The new text to replace the old test",
                     },
                 },
-                "required": ["old_text", "new_text"],
+                "required": ["file_name", "old_text", "new_text"],
             }
         )
 
     async def execute(
-        self, old_text: str | None = None, new_text: str | None = None, **kwargs: Any
+        self, file_name: str | None = None, old_text: str | None = None, new_text: str | None = None, **kwargs: Any
     ) -> str:
         if not self.memory_store:
             return "Error: Empty Memory Store. This is an internal error"
 
+        if not file_name:
+            return "Error: file_name is required"
         if not old_text:
             return "Error: old_text is required. If you want to replace all the text, use new_text instead"
-
         if not new_text:
             new_text = ""
 
-        content = self.memory_store.read_memory()
+        content = self.memory_store.read_memory(file_name)
 
         updated_content = apply_edit_to_content(content, old_text, new_text)
         if updated_content.startswith("Error:"):
             return updated_content
 
-        print(f"Memory EDIT:\n{generate_diff_string(content, updated_content)}")
-        consent = input("Do you want to save these changes? (y/N): ")
-        if consent.lower() != "y":
-            return "Edit cancelled by User"
-        return self.memory_store.write_memory(updated_content)
+        if file_name == "user":
+            print(f"{file_name.upper()} EDIT:\n{generate_diff_string(content, updated_content)}")
+            consent = input("Do you want to save these changes? (y/N): ")
+            if consent.lower() != "y":
+                return "Edit cancelled by User"
+        return self.memory_store.write_memory(file_name, updated_content)
