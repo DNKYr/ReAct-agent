@@ -3,7 +3,7 @@
 from typing import Any, Dict, Self
 
 from agent.tools.base import Tool
-from agent.tools.edit_util import apply_edit_to_content
+from agent.tools.edit_util import apply_edit_to_content, generate_diff_string
 from agent.memory import MemoryStore
 
 class Memory_Tool(Tool):
@@ -86,6 +86,10 @@ class Write_Memory(Memory_Tool):
             return "Error: Existing memory store is None"
         if not content:
             content = ""
+        print(f"Memory WRITE:\n{generate_diff_string(self.memory_store.read_memory(), content)}")
+        consent = input("Do you want to save these changes? (y/N): ")
+        if consent.lower() != "y":
+            return "Edit cancelled by User"
         result = self.memory_store.write_memory(content)
         return result
 
@@ -142,4 +146,9 @@ class Edit_Memory(Memory_Tool):
         updated_content = apply_edit_to_content(content, old_text, new_text)
         if updated_content.startswith("Error:"):
             return updated_content
+
+        print(f"Memory EDIT:\n{generate_diff_string(content, updated_content)}")
+        consent = input("Do you want to save these changes? (y/N): ")
+        if consent.lower() != "y":
+            return "Edit cancelled by User"
         return self.memory_store.write_memory(updated_content)

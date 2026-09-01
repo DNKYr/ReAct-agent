@@ -1,3 +1,4 @@
+import difflib
 import unicodedata
 from dataclasses import dataclass
 
@@ -90,3 +91,9 @@ def apply_edit_to_content(content: str, old_text: str, new_text: str) -> str:
     base_content = content
     new_content = _apply_replacement(replacement_basecontent, match)
     return new_content
+
+def generate_diff_string(old_content: str, new_content: str) -> str:
+    old_line = old_content.splitlines()
+    new_line = new_content.splitlines()
+    diff = difflib.unified_diff(old_line, new_line, lineterm="")
+    return "\n".join(diff)
