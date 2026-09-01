@@ -6,6 +6,7 @@ from pathlib import Path
 CONFIG_DIR_NAME = ".dclaw"
 HOME_CONFIG_PATH = Path.home() / CONFIG_DIR_NAME
 MEMORY_MD_PATH = HOME_CONFIG_PATH / "MEMORY.md"
+USER_MD_PATH = HOME_CONFIG_PATH / "USER.md"
 LOGS_DIR_PATH = HOME_CONFIG_PATH / "logs"
 
 
@@ -26,3 +27,10 @@ def get_logs_dir(session_id: str) -> Path:
     if not (LOGS_DIR_PATH / session_id).exists():
         os.mkdir(LOGS_DIR_PATH / session_id)
     return LOGS_DIR_PATH / session_id
+
+def create_memory_file() -> None:
+    MEMORY_MD_PATH.touch()
+
+
+def create_user_file() -> None:
+    USER_MD_PATH.touch()
